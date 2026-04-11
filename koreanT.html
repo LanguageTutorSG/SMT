@@ -527,6 +527,9 @@
       <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
     </button>
   </div>
+  <div id="koTip" style="font-size:0.62rem;font-style:italic;color:rgba(130,176,255,0.35);text-align:center;letter-spacing:0.04em;padding-bottom:2px;">
+    💡 Safari on Mac: type Korean above, or use voice on iOS with HTTPS
+  </div>
 
 </div>
 
@@ -562,6 +565,9 @@
     <button class="text-send" onclick="submitText('en')">
       <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
     </button>
+  </div>
+  <div style="font-size:0.62rem;font-style:italic;color:rgba(229,115,104,0.35);text-align:center;letter-spacing:0.04em;padding-bottom:2px;">
+    💡 No Korean audio? iPhone: Settings → Accessibility → Spoken Content → Voices → Korean
   </div>
 
   <!-- Listen button near bottom but with margin -->
@@ -653,12 +659,19 @@ function initRecognition() {
 
   recognition.onerror = (e) => {
     stopListening();
+    const panel = activePanel || 'ko';
     if (e.error === 'not-allowed') {
       showToast('Microphone access denied. Please allow it in your browser settings.');
     } else if (e.error === 'no-speech') {
-      setStatus(activePanel, 'No speech detected — try again or type below');
+      setStatus(panel, 'No speech detected — try again or type below');
+    } else if (e.error === 'language-not-supported') {
+      setStatus(panel, 'Korean voice not supported in this browser — please type below');
+      showToast('Safari on Mac does not support Korean speech recognition. Please type in the box below.');
     } else {
-      setStatus(activePanel, 'Speech error — please type below instead');
+      setStatus(panel, 'Speech error — please type below instead');
+      if (panel === 'ko') {
+        showToast('Safari on Mac rarely supports Korean voice input. Please type Korean below, or use the English button for voice.');
+      }
     }
     isBusy = false;
   };
@@ -668,7 +681,12 @@ function initRecognition() {
       stopListening();
       if (!gotResult) {
         const panel = activePanel || 'ko';
-        setStatus(panel, 'Nothing captured — try typing below');
+        if (panel === 'ko') {
+          setStatus(panel, 'Korean voice not captured — please type below ↓');
+          showToast('Safari on Mac does not support Korean speech recognition. Type Korean in the text box instead — it works perfectly!');
+        } else {
+          setStatus(panel, 'Nothing captured — try again or type below');
+        }
         isBusy = false;
       }
     }
@@ -784,28 +802,73 @@ function speak(text, lang, panel) {
   if (!text) { isBusy = false; return; }
   window.speechSynthesis.cancel();
 
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = lang;
-  utter.rate = lang === 'ko-KR' ? 0.9 : 0.95;
+  const wave = document.getElementById('wave' + panel.toUpperCase());
 
   const doSpeak = () => {
     const voices = window.speechSynthesis.getVoices();
-    const voice = voices.find(v => v.lang === lang) ||
-                  voices.find(v => v.lang.startsWith(lang.split('-')[0]));
-    if (voice) utter.voice = voice;
-    window.speechSynthesis.speak(utter);
-  };
 
-  const wave = document.getElementById('wave' + panel.toUpperCase());
-  utter.onstart = () => { if (wave) wave.classList.add('active'); };
-  utter.onend = utter.onerror = () => {
-    if (wave) wave.classList.remove('active');
-    isBusy = false;
+    // Find best matching voice
+    const voice = voices.find(v => v.lang === lang)
+      || voices.find(v => v.lang.replace('_','-').startsWith(lang.split('-')[0]));
+
+    // If trying Korean but no Korean voice available, skip TTS gracefully
+    if (lang === 'ko-KR' && !voice) {
+      setStatus(panel, 'No Korean voice installed — see tip below');
+      showToast('No Korean voice found. On iPhone: Settings → Accessibility → Spoken Content → Voices → Korean → download a voice.');
+      isBusy = false;
+      return;
+    }
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang;
+    utter.rate = lang === 'ko-KR' ? 0.9 : 0.95;
+    if (voice) utter.voice = voice;
+
+    // Safety timeout — if onstart never fires within 4s, unblock the app
+    let started = false;
+    const safetyTimer = setTimeout(() => {
+      if (!started) {
+        window.speechSynthesis.cancel();
+        if (wave) wave.classList.remove('active');
+        isBusy = false;
+        setStatus(panel, 'Tap to try again');
+      }
+    }, 4000);
+
+    utter.onstart = () => {
+      started = true;
+      clearTimeout(safetyTimer);
+      if (wave) wave.classList.add('active');
+    };
+
+    utter.onend = () => {
+      clearTimeout(safetyTimer);
+      if (wave) wave.classList.remove('active');
+      isBusy = false;
+    };
+
+    utter.onerror = () => {
+      clearTimeout(safetyTimer);
+      if (wave) wave.classList.remove('active');
+      isBusy = false;
+    };
+
+    window.speechSynthesis.speak(utter);
   };
 
   const voices = window.speechSynthesis.getVoices();
   if (voices.length === 0) {
-    window.speechSynthesis.onvoiceschanged = doSpeak;
+    // iOS Safari: voices load asynchronously
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      doSpeak();
+    };
+    // If onvoiceschanged never fires, unblock after 3s
+    setTimeout(() => {
+      if (isBusy && !window.speechSynthesis.speaking) {
+        doSpeak();
+      }
+    }, 3000);
   } else {
     doSpeak();
   }
