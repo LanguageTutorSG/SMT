@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>普通话练习 · Mandarin Tutor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --ink: #1a1208;
+    --paper: #f5efe3;
+    --aged: #e8dcc8;
+    --red: #c0392b;
+    --red-light: #e74c3c;
+    --gold: #b8860b;
+    --gold-light: #d4a843;
+    --mist: #8b7d6b;
+    --shadow: rgba(26,18,8,0.15);
+    --glow: rgba(184,134,11,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ink);
+    min-height: 100vh;
+    font-family: 'Noto Sans SC', sans-serif;
+    color: var(--paper);
+    overflow-x: hidden;
+  }
+
+  /* Ink wash background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(139,99,60,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 80%, rgba(192,57,43,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 100% 100% at 50% 50%, rgba(40,30,15,0.9) 0%, var(--ink) 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 16px 180px;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    padding: 36px 0 24px;
+    border-bottom: 1px solid rgba(184,134,11,0.2);
+    margin-bottom: 8px;
+  }
+
+  .title-zh {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: 0.15em;
+    text-shadow: 0 0 30px rgba(212,168,67,0.4);
+    line-height: 1.2;
+  }
+
+  .title-en {
+    font-family: 'Lora', serif;
+    font-size: 0.85rem;
+    color: var(--mist);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  /* Level bar */
+  .level-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 0 8px;
+    font-size: 0.75rem;
+    color: var(--mist);
+    letter-spacing: 0.08em;
+  }
+
+  .level-label {
+    font-family: 'Lora', serif;
+    font-style: italic;
+  }
+
+  .level-dots {
+    display: flex;
+    gap: 5px;
+  }
+
+  .level-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 1px solid var(--mist);
+    transition: all 0.4s ease;
+  }
+
+  .level-dot.active {
+    background: var(--gold-light);
+    border-color: var(--gold-light);
+    box-shadow: 0 0 8px var(--glow);
+  }
+
+  .level-name {
+    font-size: 0.78rem;
+    color: var(--gold-light);
+    font-weight: 500;
+  }
+
+  /* Chat area */
+  .chat-scroll {
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .message {
+    display: flex;
+    flex-direction: column;
+    animation: fadeSlideIn 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user { align-items: flex-end; }
+  .message.tutor { align-items: flex-start; }
+
+  .msg-role {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--mist);
+    margin-bottom: 5px;
+    padding: 0 4px;
+  }
+
+  .message.user .msg-role { color: rgba(192,57,43,0.7); }
+
+  .bubble {
+    max-width: 88%;
+    border-radius: 2px;
+    padding: 14px 18px;
+    position: relative;
+  }
+
+  .message.user .bubble {
+    background: linear-gradient(135deg, rgba(192,57,43,0.15), rgba(192,57,43,0.08));
+    border: 1px solid rgba(192,57,43,0.3);
+    border-radius: 12px 2px 12px 12px;
+  }
+
+  .message.tutor .bubble {
+    background: linear-gradient(135deg, rgba(184,134,11,0.1), rgba(184,134,11,0.04));
+    border: 1px solid rgba(184,134,11,0.25);
+    border-radius: 2px 12px 12px 12px;
+  }
+
+  .chinese-text {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.45rem;
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--paper);
+    letter-spacing: 0.05em;
+  }
+
+  .pinyin-text {
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-size: 0.82rem;
+    color: var(--gold-light);
+    margin-top: 5px;
+    letter-spacing: 0.03em;
+  }
+
+  .english-text {
+    font-size: 0.78rem;
+    color: var(--mist);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .user-transcript {
+    font-size: 1rem;
+    color: rgba(245,239,227,0.85);
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  /* Feedback bubble */
+  .feedback-bubble {
+    max-width: 88%;
+    margin-top: 6px;
+    padding: 10px 14px;
+    background: rgba(40,30,15,0.6);
+    border-left: 2px solid var(--gold);
+    border-radius: 0 6px 6px 0;
+    font-size: 0.75rem;
+    color: rgba(184,134,11,0.85);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  /* Speak button on tutor message */
+  .replay-btn {
+    margin-top: 7px;
+    background: none;
+    border: 1px solid rgba(184,134,11,0.3);
+    color: var(--gold);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-family: 'Lora', serif;
+    letter-spacing: 0.08em;
+    transition: all 0.2s;
+  }
+  .replay-btn:hover { background: rgba(184,134,11,0.1); }
+
+  /* Welcome card */
+  .welcome-card {
+    text-align: center;
+    padding: 32px 24px;
+    margin: 20px 0;
+    border: 1px solid rgba(184,134,11,0.15);
+    border-radius: 4px;
+    background: rgba(26,18,8,0.4);
+  }
+
+  .welcome-card .big-char {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 5rem;
+    color: rgba(184,134,11,0.2);
+    line-height: 1;
+    margin-bottom: 16px;
+    text-shadow: 0 0 40px rgba(184,134,11,0.15);
+  }
+
+  .welcome-card h2 {
+    font-family: 'Lora', serif;
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--paper);
+    margin-bottom: 10px;
+  }
+
+  .welcome-card p {
+    font-size: 0.78rem;
+    color: var(--mist);
+    line-height: 1.7;
+  }
+
+  /* Bottom controls */
+  .controls {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 20px 28px;
+    background: linear-gradient(to top, rgba(10,7,3,0.97) 60%, transparent);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .status-line {
+    font-size: 0.72rem;
+    color: var(--mist);
+    letter-spacing: 0.12em;
+    min-height: 18px;
+    font-family: 'Lora', serif;
+    font-style: italic;
+    text-align: center;
+    transition: color 0.3s;
+  }
+
+  .status-line.listening { color: var(--red-light); }
+  .status-line.thinking { color: var(--gold-light); }
+  .status-line.speaking { color: #4a9eff; }
+
+  /* The mic button */
+  .mic-ring {
+    position: relative;
+    width: 72px;
+    height: 72px;
+  }
+
+  .mic-ring::before,
+  .mic-ring::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px solid var(--gold);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .mic-ring.pulsing::before {
+    opacity: 0.4;
+    animation: ripple 1.2s ease-out infinite;
+  }
+
+  .mic-ring.pulsing::after {
+    opacity: 0.2;
+    animation: ripple 1.2s ease-out infinite 0.4s;
+  }
+
+  @keyframes ripple {
+    0% { transform: scale(1); opacity: 0.4; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+
+  .mic-btn {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    background: radial-gradient(circle at 35% 35%, rgba(192,57,43,0.9), rgba(140,30,20,1));
+    box-shadow: 0 4px 20px rgba(192,57,43,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mic-btn:active { transform: scale(0.94); }
+
+  .mic-btn.listening {
+    background: radial-gradient(circle at 35% 35%, rgba(231,76,60,1), rgba(192,57,43,1));
+    box-shadow: 0 4px 30px rgba(192,57,43,0.7), inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+
+  .mic-btn.disabled {
+    background: radial-gradient(circle at 35% 35%, rgba(80,70,60,0.8), rgba(50,40,30,1));
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .mic-btn svg {
+    width: 28px; height: 28px;
+    fill: white;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+  }
+
+  .hint-text {
+    font-size: 0.68rem;
+    color: rgba(139,125,107,0.5);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  /* TTS status */
+  .speaking-indicator {
+    display: none;
+    gap: 3px;
+    align-items: center;
+  }
+
+  .speaking-indicator.active { display: flex; }
+
+  .wave-bar {
+    width: 3px;
+    border-radius: 2px;
+    background: #4a9eff;
+    animation: wave 0.8s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+  .wave-bar:nth-child(2) { height: 14px; animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { height: 10px; animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { height: 16px; animation-delay: 0.15s; }
+  .wave-bar:nth-child(5) { height: 8px; animation-delay: 0.05s; }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+    50% { transform: scaleY(1); opacity: 1; }
+  }
+
+  /* Error toast */
+  .toast {
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(192,57,43,0.9);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    text-align: center;
+    max-width: 300px;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Language toggle */
+  .lang-toggle {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(184,134,11,0.2);
+    border-radius: 30px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .lang-btn {
+    background: none;
+    border: none;
+    border-radius: 24px;
+    padding: 6px 14px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-family: 'Lora', serif;
+    letter-spacing: 0.08em;
+    color: var(--mist);
+    transition: all 0.25s ease;
+    white-space: nowrap;
+  }
+
+  .lang-btn.active {
+    background: rgba(184,134,11,0.18);
+    color: var(--gold-light);
+    box-shadow: 0 0 10px rgba(184,134,11,0.15);
+  }
+
+  .lang-mode-label {
+    font-size: 0.65rem;
+    color: rgba(139,125,107,0.45);
+    font-family: 'Lora', serif;
+    font-style: italic;
+    text-align: center;
+    letter-spacing: 0.06em;
+    min-height: 14px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(184,134,11,0.2); border-radius: 2px; }
+
+  /* API key setup */
+  .setup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,7,3,0.97);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .setup-card {
+    background: rgba(26,18,8,0.9);
+    border: 1px solid rgba(184,134,11,0.3);
+    border-radius: 8px;
+    padding: 32px 28px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .setup-card .char {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 3.5rem;
+    color: rgba(184,134,11,0.4);
+    margin-bottom: 16px;
+  }
+
+  .setup-card h3 {
+    font-family: 'Lora', serif;
+    font-size: 1.1rem;
+    color: var(--paper);
+    margin-bottom: 8px;
+  }
+
+  .setup-card p {
+    font-size: 0.75rem;
+    color: var(--mist);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .setup-card input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(184,134,11,0.3);
+    border-radius: 4px;
+    padding: 11px 14px;
+    color: var(--paper);
+    font-size: 0.85rem;
+    font-family: monospace;
+    outline: none;
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
+  }
+
+  .setup-card input:focus {
+    border-color: rgba(184,134,11,0.7);
+    box-shadow: 0 0 0 2px rgba(184,134,11,0.1);
+  }
+
+  .setup-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--red), rgba(140,30,20,1));
+    border: none;
+    border-radius: 4px;
+    color: white;
+    padding: 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: 'Lora', serif;
+    letter-spacing: 0.1em;
+    transition: opacity 0.2s;
+  }
+
+  .setup-btn:hover { opacity: 0.9; }
+
+  .setup-note {
+    font-size: 0.65rem;
+    color: rgba(139,125,107,0.5);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  /* Text input fallback */
+  .text-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .text-input-bar input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(184,134,11,0.25);
+    border-radius: 24px;
+    padding: 9px 16px;
+    color: var(--paper);
+    font-size: 0.9rem;
+    font-family: 'Noto Sans SC', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .text-input-bar input:focus {
+    border-color: rgba(184,134,11,0.55);
+  }
+
+  .text-input-bar input::placeholder {
+    color: rgba(139,125,107,0.4);
+    font-size: 0.78rem;
+  }
+
+  .send-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(184,134,11,0.2);
+    color: var(--gold-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .send-btn:hover { background: rgba(184,134,11,0.35); }
+  .send-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+  .speech-tip {
+    font-size: 0.63rem;
+    color: rgba(139,125,107,0.4);
+    text-align: center;
+    letter-spacing: 0.04em;
+    display: none;
+  }
+  .speech-tip.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-card">
+    <div class="char">学</div>
+    <h3>Mandarin Voice Tutor</h3>
+    <p>Enter your Anthropic API key to begin. It stays in your browser and is never stored externally.</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" />
+    <button class="setup-btn" onclick="startApp()">开始 · Begin</button>
+    <p class="setup-note">Need a key? Visit console.anthropic.com · Your key is saved locally in this browser session only.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+  <header>
+    <div class="title-zh">普通话练习</div>
+    <div class="title-en">Mandarin Voice Tutor</div>
+  </header>
+
+  <div class="level-strip">
+    <span class="level-label">Level</span>
+    <div class="level-dots" id="levelDots">
+      <div class="level-dot active" data-l="1"></div>
+      <div class="level-dot" data-l="2"></div>
+      <div class="level-dot" data-l="3"></div>
+      <div class="level-dot" data-l="4"></div>
+      <div class="level-dot" data-l="5"></div>
+      <div class="level-dot" data-l="6"></div>
+    </div>
+    <span class="level-name" id="levelName">HSK 1 · Beginner</span>
+  </div>
+
+  <div class="chat-scroll" id="chatScroll">
+    <div class="welcome-card" id="welcomeCard">
+      <div class="big-char">你好</div>
+      <h2>Welcome to your Mandarin tutor</h2>
+      <p>Press the red button and speak in Mandarin to practise.<br>Switch to <strong style="color:rgba(212,168,67,0.8)">🇬🇧 English</strong> to ask questions like<br><em>"How do I say I'm hungry?"</em> — then switch back to practise!</p>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="speaking-indicator" id="speakingIndicator">
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+    </div>
+    <div class="status-line" id="statusLine">Tap to speak</div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:20px">
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btnZH" onclick="setLang('zh')">🇨🇳 中文</button>
+      <button class="lang-btn" id="btnEN" onclick="setLang('en')">🇬🇧 English</button>
+    </div>
+
+    <div class="mic-ring" id="micRing">
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+        <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm0 2a2 2 0 0 0-2 2v6a2 2 0 0 0 4 0V5a2 2 0 0 0-2-2zm-1 16.93A8.001 8.001 0 0 1 4 12H6a6 6 0 0 0 12 0h2a8.001 8.001 0 0 1-7 7.93V22h2v2H9v-2h2v-1.07z"/></svg>
+      </button>
+    </div>
+
+    <div style="width:80px"></div>
+  </div>
+
+  <div class="lang-mode-label" id="langModeLabel">Speaking Mandarin</div>
+
+  <div class="text-input-bar">
+    <input type="text" id="textInput" placeholder="Or type here — Chinese or English…" />
+    <button class="send-btn" onclick="submitText()" title="Send">
+      <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+    </button>
+  </div>
+
+  <div class="speech-tip" id="speechTip">💡 Safari tip: speech recognition works best in English mode or try typing above</div>
+  <div class="hint-text" id="hintText">Tap · Speak · Learn</div>
+</div>
+
+<script>
+let apiKey = '';
+let recognition = null;
+let isListening = false;
+let isBusy = false;
+let currentLevel = 1;
+let conversationHistory = [];
+let ttsQueue = [];
+let isSpeaking = false;
+let currentLang = 'zh'; // 'zh' or 'en'
+
+const LEVEL_NAMES = {
+  1: 'HSK 1 · Beginner',
+  2: 'HSK 2 · Elementary',
+  3: 'HSK 3 · Intermediate',
+  4: 'HSK 4 · Upper Intermediate',
+  5: 'HSK 5 · Advanced',
+  6: 'HSK 6 · Mastery'
+};
+
+const SYSTEM_PROMPT = `You are a warm, encouraging Mandarin Chinese conversation tutor. Your job is to:
+1. Assess the user's Mandarin level from their input (HSK 1-6 scale)
+2. Respond naturally in Mandarin appropriate to their level
+3. Gradually and gently increase difficulty as they improve
+4. When the user asks questions in English like "How do I say X", "What does X mean", "Teach me X", answer their question helpfully — show them the Chinese, pinyin, and meaning, then invite them to try saying it
+
+ALWAYS respond with ONLY a valid JSON object (no markdown, no code blocks) in this exact format:
+{
+  "chinese": "Your response in Chinese characters",
+  "pinyin": "Full pinyin with tone marks for your response",
+  "english": "English translation of your response",
+  "feedback": "Brief encouraging feedback written in plain English only. If you mention any Chinese word or phrase, ALWAYS write it as: pinyin (characters) — for example: ān jìng de dìfāng (安静的地方). Never show Chinese characters alone in this field.",
+  "level": 1,
+  "topic_hint": "A short English suggestion for what they could say next. If you include any Chinese, write it as: pinyin (characters) — for example: Try saying wǒ è le (我饿了) meaning I am hungry. Never show Chinese characters alone in this field."
+}
+
+Level guide:
+- Level 1: Very simple sentences, basic greetings, numbers, colours. Max 5-8 words.
+- Level 2: Simple daily life sentences. Introduce measure words. 8-12 words.
+- Level 3: Compound sentences, past/future tense, opinions. 12-18 words.
+- Level 4: Complex topics, conditionals, nuance. 18-25 words.
+- Level 5: Idiomatic expressions, abstract topics. Longer responses.
+- Level 6: Near-native complexity. Rich vocabulary, chengyu.
+
+If the user speaks English (not asking a question), welcome them warmly in Chinese at level 1 and ask a simple question to assess them.
+If the user asks "How do I say X" or "What is X in Chinese" or similar, put the answer phrase in the "chinese" field and invite them to try repeating it.
+If the user makes errors, gently model the correct form in your response without being preachy.
+Keep the conversation engaging — ask follow-up questions!`;
+
+function startApp() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-ant')) {
+    showToast('Please enter a valid Anthropic API key (starts with sk-ant)');
+    return;
+  }
+  apiKey = key;
+  document.getElementById('setupOverlay').style.display = 'none';
+  initSpeechRecognition();
+}
+
+function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast('Speech recognition not supported. Please use Safari on iOS/macOS or Chrome.');
+    document.getElementById('micBtn').classList.add('disabled');
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'zh-CN';
+  recognition.maxAlternatives = 1;
+
+  let gotResult = false;
+
+  recognition.onstart = () => {
+    isListening = true;
+    gotResult = false;
+    document.getElementById('micBtn').classList.add('listening');
+    document.getElementById('micRing').classList.add('pulsing');
+    const lang = currentLang === 'zh' ? '正在听 · Listening (中文)...' : 'Listening (English)...';
+    setStatus('listening', lang);
+    document.getElementById('hintText').textContent = 'Tap to stop';
+  };
+
+  recognition.onresult = (event) => {
+    gotResult = true;
+    const transcript = event.results[0][0].transcript;
+    stopListening();
+    processUserSpeech(transcript);
+  };
+
+  recognition.onerror = (event) => {
+    stopListening();
+    if (event.error === 'no-speech') {
+      setStatus('', 'No speech detected — try again or type below');
+    } else if (event.error === 'not-allowed') {
+      showToast('Microphone access denied. Please allow in Safari → Settings for This Website.');
+    } else if (event.error === 'language-not-supported') {
+      setStatus('', 'Chinese speech not supported — try typing or use English mode');
+      document.getElementById('speechTip').classList.add('visible');
+    } else {
+      setStatus('', 'Speech error — try typing below');
+      document.getElementById('speechTip').classList.add('visible');
+    }
+    isBusy = false;
+  };
+
+  recognition.onend = () => {
+    if (isListening) {
+      stopListening();
+      // Safari silent failure: onend fired but onresult never did
+      if (!gotResult) {
+        setStatus('', 'Nothing captured — try typing below, or use 🇬🇧 English mode');
+        document.getElementById('speechTip').classList.add('visible');
+        isBusy = false;
+      }
+    }
+  };
+}
+
+function toggleMic() {
+  if (isBusy) {
+    // Stop TTS if speaking
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      isSpeaking = false;
+      document.getElementById('speakingIndicator').classList.remove('active');
+      setStatus('', 'Tap to speak');
+      isBusy = false;
+    }
+    return;
+  }
+  if (isListening) {
+    recognition.stop();
+    stopListening();
+  } else {
+    if (!recognition) { initSpeechRecognition(); }
+    // Switch to Chinese or detect based on current language
+    startListening();
+  }
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('btnZH').classList.toggle('active', lang === 'zh');
+  document.getElementById('btnEN').classList.toggle('active', lang === 'en');
+  const label = document.getElementById('langModeLabel');
+  if (lang === 'zh') {
+    label.textContent = 'Speaking Mandarin';
+    label.style.color = 'rgba(212,168,67,0.5)';
+  } else {
+    label.textContent = 'Asking in English';
+    label.style.color = 'rgba(74,158,255,0.5)';
+  }
+}
+
+function startListening() {
+  recognition.lang = currentLang === 'zh' ? 'zh-CN' : 'en-US';
+  try {
+    recognition.start();
+    isBusy = true;
+  } catch(e) {
+    // Already running
+  }
+}
+
+function stopListening() {
+  isListening = false;
+  document.getElementById('micBtn').classList.remove('listening');
+  document.getElementById('micRing').classList.remove('pulsing');
+  document.getElementById('hintText').textContent = 'Tap · Speak · Learn';
+}
+
+async function processUserSpeech(transcript) {
+  // Hide welcome card
+  const wc = document.getElementById('welcomeCard');
+  if (wc) wc.style.display = 'none';
+
+  addUserMessage(transcript);
+  setStatus('thinking', '思考中 · Thinking...');
+  isBusy = true;
+
+  conversationHistory.push({ role: 'user', content: transcript });
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: conversationHistory
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error');
+    }
+
+    const data = await response.json();
+    const rawText = data.content[0].text.trim();
+
+    let parsed;
+    try {
+      // Strip any accidental markdown fences
+      const clean = rawText.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      throw new Error('Could not parse response. Please try again.');
+    }
+
+    conversationHistory.push({ role: 'assistant', content: rawText });
+
+    // Update level
+    if (parsed.level && parsed.level !== currentLevel) {
+      animateLevelChange(parsed.level);
+    }
+
+    addTutorMessage(parsed);
+    speakChinese(parsed.chinese);
+
+    // Auto-switch back to Chinese mode after an English question
+    if (currentLang === 'en') {
+      setTimeout(() => setLang('zh'), 800);
+    }
+
+  } catch(err) {
+    setStatus('', 'Error — please try again');
+    showToast(err.message || 'Something went wrong');
+    isBusy = false;
+  }
+}
+
+function addUserMessage(text) {
+  const chat = document.getElementById('chatScroll');
+  const div = document.createElement('div');
+  div.className = 'message user';
+  div.innerHTML = `
+    <div class="msg-role">你 · You</div>
+    <div class="bubble">
+      <div class="user-transcript">${escHtml(text)}</div>
+    </div>
+  `;
+  chat.appendChild(div);
+  scrollBottom();
+}
+
+function addTutorMessage(data) {
+  const chat = document.getElementById('chatScroll');
+  const div = document.createElement('div');
+  div.className = 'message tutor';
+
+  const hint = data.topic_hint ? `<div class="hint-sub">💡 Try saying: <em>${escHtml(data.topic_hint)}</em></div>` : '';
+  const feedback = data.feedback ? `<div class="feedback-bubble">${escHtml(data.feedback)}</div>` : '';
+
+  div.innerHTML = `
+    <div class="msg-role">老师 · Tutor</div>
+    <div class="bubble">
+      <div class="chinese-text">${escHtml(data.chinese)}</div>
+      <div class="pinyin-text">${escHtml(data.pinyin)}</div>
+      <div class="english-text">${escHtml(data.english)}</div>
+    </div>
+    ${feedback}
+    <button class="replay-btn" onclick="speakChinese('${escAttr(data.chinese)}')">🔊 Replay</button>
+  `;
+
+  if (data.topic_hint) {
+    const hintDiv = document.createElement('div');
+    hintDiv.style.cssText = 'font-size:0.68rem;color:rgba(139,125,107,0.55);padding:3px 4px;font-style:italic;';
+    hintDiv.textContent = '💡 Try: ' + data.topic_hint;
+    div.appendChild(hintDiv);
+  }
+
+  chat.appendChild(div);
+  scrollBottom();
+}
+
+function speakChinese(text) {
+  if (!text) return;
+  window.speechSynthesis.cancel();
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'zh-CN';
+  utter.rate = 0.85;
+  utter.pitch = 1.0;
+
+  // Prefer a Chinese voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const cnVoice = voices.find(v => v.lang === 'zh-CN' || v.lang === 'zh_CN') ||
+                  voices.find(v => v.lang.startsWith('zh'));
+  if (cnVoice) utter.voice = cnVoice;
+
+  utter.onstart = () => {
+    isSpeaking = true;
+    isBusy = true;
+    document.getElementById('speakingIndicator').classList.add('active');
+    setStatus('speaking', '播放中 · Speaking...');
+    document.getElementById('hintText').textContent = 'Tap to stop';
+  };
+
+  utter.onend = utter.onerror = () => {
+    isSpeaking = false;
+    isBusy = false;
+    document.getElementById('speakingIndicator').classList.remove('active');
+    setStatus('', 'Tap to speak');
+    document.getElementById('hintText').textContent = 'Tap · Speak · Learn';
+  };
+
+  // Safari fix: voices may not be loaded yet
+  if (voices.length === 0) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      const v2 = window.speechSynthesis.getVoices();
+      const cv = v2.find(v => v.lang === 'zh-CN' || v.lang.startsWith('zh'));
+      if (cv) utter.voice = cv;
+      window.speechSynthesis.speak(utter);
+    };
+  } else {
+    window.speechSynthesis.speak(utter);
+  }
+}
+
+function animateLevelChange(newLevel) {
+  currentLevel = newLevel;
+  const dots = document.querySelectorAll('.level-dot');
+  dots.forEach(d => {
+    const l = parseInt(d.dataset.l);
+    d.classList.toggle('active', l <= newLevel);
+  });
+  document.getElementById('levelName').textContent = LEVEL_NAMES[newLevel] || 'HSK ' + newLevel;
+
+  // Flash the level strip
+  const strip = document.querySelector('.level-strip');
+  strip.style.transition = 'background 0.3s';
+  strip.style.background = 'rgba(184,134,11,0.1)';
+  setTimeout(() => strip.style.background = '', 600);
+}
+
+function setStatus(type, msg) {
+  const el = document.getElementById('statusLine');
+  el.className = 'status-line' + (type ? ' ' + type : '');
+  el.textContent = msg;
+}
+
+function scrollBottom() {
+  setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 50);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(str) {
+  return String(str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+function submitText() {
+  const input = document.getElementById('textInput');
+  const text = input.value.trim();
+  if (!text || isBusy) return;
+  input.value = '';
+  processUserSpeech(text);
+}
+
+// Handle Enter key for API key input
+document.getElementById('apiKeyInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startApp();
+});
+
+// Handle Enter key for text input
+document.getElementById('textInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitText();
+});
+
+// Preload voices on Safari
+window.speechSynthesis.getVoices();
+</script>
+</body>
+</html>
